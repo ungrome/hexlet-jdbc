@@ -2,6 +2,9 @@ package io.hexlet;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class Application {
     // Нужно указывать базовое исключение,
@@ -10,27 +13,24 @@ public class Application {
         // Создаем соединение с базой в памяти
         // База создается прямо во время выполнения этой строчки
         // Здесь hexlet_test — это имя базы данных
-        try(var conn = DriverManager.getConnection("jdbc:h2:mem:hexlet_test")) {
-            var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, username VARCHAR(255), phone VARCHAR(255))";
-            // Чтобы выполнить запрос, создадим объект statement
-            try (var statement = conn.createStatement()) {
-                statement.execute(sql);
-            }
-            var sql2 = "INSERT INTO users (username, phone) VALUES ('tommy', '123456789')";
-            try (var statement2 = conn.createStatement()) {
-                statement2.executeUpdate(sql2);
-            }
-            var sql3 = "SELECT * FROM users";
-            try (var statement3 = conn.createStatement()) {
-                // Здесь вы видите указатель на набор данных в памяти СУБД
-                var resultSet = statement3.executeQuery(sql3);
-                // Набор данных — это итератор
-                // Мы перемещаемся по нему с помощью next() и каждый раз получаем новые значения
-                while (resultSet.next()) {
-                    System.out.println(resultSet.getString("username"));
-                    System.out.println(resultSet.getString("phone"));
-                }
-            }
+        var conn = DriverManager.getConnection("jdbc:h2:mem:hexlet_test");
+
+        var usersDao = new UserDAO(conn);
+
+        usersDao.createTable();
+        Map<String,String> data = Map.of(
+                "Arbuzova", "2345223",
+                "Bystryakov", "4644788",
+                "Vorobyeva", "4748599"
+                );
+        for (Map.Entry<String, String> entry: data.entrySet()) {
+            var user = new User(entry.getKey(), entry.getValue());
+            usersDao.save(user);
         }
+        usersDao.printTable();
+        var user1 = new User("Voschikov", "2495254");
+        usersDao.save(user1);
+        usersDao.delete(2L);
+        usersDao.printTable();
     }
 }
